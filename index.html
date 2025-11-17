@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cómo entrenar a tu perceptrón</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #050816;
+      --bg-alt: #0b1020;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.2);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --radius: 18px;
+      --shadow-soft: 0 18px 40px rgba(0,0,0,0.55);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1d283a 0, #050816 55%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .shell {
+      max-width: 900px;
+      width: 100%;
+      background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(15,23,42,0.98));
+      border-radius: 26px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(148,163,184,0.25);
+      padding: 2.5rem 2.2rem;
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.9rem, 3vw, 2.3rem);
+      letter-spacing: 0.02em;
+    }
+    .subtitle {
+      margin: 0 0 1.7rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(15,118,110,0.18);
+      color: #a5f3fc;
+      font-size: 0.78rem;
+      margin-bottom: 0.8rem;
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 12px #22c55e;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    a.btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.4rem;
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      border: 1px solid rgba(148,163,184,0.4);
+      color: var(--text);
+      background: rgba(15,23,42,0.9);
+      transition: 0.2s ease;
+      gap: 0.5rem;
+    }
+    a.btn.primary {
+      background: linear-gradient(135deg,#38bdf8,#4ade80);
+      border-color: transparent;
+      color: #0b1120;
+    }
+    a.btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 26px rgba(15,23,42,0.6);
+      border-color: rgba(248,250,252,0.4);
+    }
+    a.btn.primary:hover {
+      box-shadow: 0 14px 34px rgba(56,189,248,0.55);
+    }
+    .pill {
+      display: inline-flex;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.8);
+      border: 1px solid rgba(148,163,184,0.35);
+      font-size: 0.75rem;
+      color: var(--muted);
+      gap: 0.4rem;
+      align-items: center;
+      margin-top: 0.8rem;
+    }
+    .pill span.key {
+      padding: 0.12rem 0.4rem;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.95);
+      border: 1px solid rgba(148,163,184,0.35);
+      font-size: 0.7rem;
+    }
+    ul {
+      margin: 0.3rem 0 0;
+      padding-left: 1.1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Proyecto – Métodos Numéricos / Perceptrón
+    </div>
+    <h1>Cómo entrenar a tu perceptrón</h1>
+    <p class="subtitle">
+      Desarrollo teórico completo de perceptrones (una y dos capas), entrenamiento por descenso de gradiente
+      y aplicación a puertas lógicas AND, OR y XOR, junto con una demo interactiva en el navegador.
+    </p>
+
+    <section>
+      <p style="font-size:0.95rem;">
+        Usa los siguientes enlaces para navegar entre las partes del proyecto:
+      </p>
+      <div class="links">
+        <a class="btn primary" href="teoria.html">
+          📖 Desarrollo teórico
+        </a>
+        <a class="btn" href="interactivo.html">
+          ⚙️ Demo interactiva
+        </a>
+        <a class="btn" href="pdf.html">
+          ✒️ Paper original
+        </a>
+      </div>
+
+      <div class="pill">
+        <span>Contenido</span>
+        <span class="key">Teoría</span>
+        <span class="key">Puertas lógicas</span>
+        <span class="key">MLP XOR</span>
+        <span class="key">Demo JS</span>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

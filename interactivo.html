@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cómo entrenar a tu perceptrón – Demo interactiva</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: #020617;
+      --card: rgba(15,23,42,0.97);
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.2);
+      --border-subtle: rgba(148,163,184,0.35);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --radius: 18px;
+      --shadow-soft: 0 18px 40px rgba(0,0,0,0.55);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1f2937 0, #020617 55%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(16px);
+      background: linear-gradient(to right, rgba(15,23,42,0.92), rgba(15,23,42,0.97));
+      border-bottom: 1px solid rgba(148,163,184,0.35);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0.9rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 0.98rem;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .logo-badge {
+      width: 26px;
+      height: 26px;
+      border-radius: 12px;
+      background: radial-gradient(circle at 20% 0%, #22c55e 0, #22c55e 24%, #0f172a 55%);
+      border: 1px solid rgba(148,163,184,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 14px rgba(34,197,94,0.8);
+      font-size: 0.74rem;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    nav a.link {
+      padding: 0.4rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      color: var(--muted);
+    }
+
+    nav a.link.active {
+      border-color: rgba(56,189,248,0.6);
+      background: rgba(15,23,42,0.8);
+      color: var(--accent);
+    }
+
+    nav a.btn {
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.35);
+      font-size: 0.86rem;
+    }
+
+    /* Layout más amplio */
+    main {
+      max-width: 1280px;
+      margin: 1.4rem auto 2.8rem;
+      padding: 0 1.2rem 2.8rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.1fr);
+      gap: 1.3rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 26px;
+      padding: 1.6rem 1.5rem 1.9rem;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .title {
+      margin-top: 0;
+      margin-bottom: 0.4rem;
+      font-size: 1.25rem;
+    }
+
+    .muted { color: var(--muted); font-size: 0.9rem; }
+
+    .pill-section {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.18rem 0.65rem;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.92);
+      border: 1px solid rgba(148,163,184,0.35);
+      font-size: 0.77rem;
+      color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+
+    .gate-buttons {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      margin: 0.8rem 0 0.8rem;
+    }
+
+    .gate-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.4);
+      background: rgba(15,23,42,0.95);
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 0.45rem 0.9rem;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .gate-btn.active {
+      border-color: rgba(56,189,248,0.9);
+      background: var(--accent-soft);
+      color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56,189,248,0.6);
+    }
+
+    .mode-toggle {
+      display: inline-flex;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.5);
+      overflow: hidden;
+      font-size: 0.8rem;
+      margin-top: 0.2rem;
+    }
+
+    .mode-toggle button {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      padding: 0.3rem 0.75rem;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .mode-toggle button.active {
+      background: rgba(15,23,42,0.95);
+      color: var(--accent);
+    }
+
+    .controls-group {
+      margin-top: 0.9rem;
+      padding: 0.7rem 0.8rem;
+      border-radius: 14px;
+      border: 1px dashed rgba(148,163,184,0.5);
+      background: rgba(15,23,42,0.7);
+      font-size: 0.9rem;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.5rem;
+      align-items: center;
+      margin: 0.35rem 0;
+    }
+
+    .slider-row label {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    input[type="range"] { width: 100%; }
+
+    .slider-value {
+      font-size: 0.85rem;
+      color: var(--muted);
+      min-width: 3rem;
+      text-align: right;
+    }
+
+    .btn-small {
+      margin-top: 0.5rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      background: rgba(15,23,42,0.95);
+      color: var(--text);
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .btn-small.secondary {
+      background: rgba(15,23,42,0.85);
+      border-color: rgba(148,163,184,0.5);
+      color: var(--muted);
+    }
+
+    .btn-small:hover {
+      border-color: rgba(248,250,252,0.6);
+    }
+
+    .controls-threshold,
+    .controls-train {
+      margin-top: 0.9rem;
+      padding: 0.7rem 0.8rem;
+      border-radius: 14px;
+      border: 1px dashed rgba(148,163,184,0.5);
+      background: rgba(15,23,42,0.7);
+      font-size: 0.9rem;
+    }
+
+    .controls-row {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-top: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .truth-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.9rem;
+      font-size: 0.9rem;
+    }
+
+    .truth-table th,
+    .truth-table td {
+      border: 1px solid rgba(148,163,184,0.5);
+      padding: 0.35rem 0.4rem;
+      text-align: center;
+    }
+
+    .truth-table th {
+      background: rgba(15,23,42,0.95);
+      font-weight: 500;
+    }
+
+    .badge-class-1,
+    .badge-class-0 {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.6rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+    }
+
+    .badge-class-1 {
+      background: rgba(34,197,94,0.15);
+      border: 1px solid rgba(34,197,94,0.7);
+      color: #bbf7d0;
+    }
+
+    .badge-class-0 {
+      background: rgba(248,113,113,0.12);
+      border: 1px solid rgba(248,113,113,0.7);
+      color: #fecaca;
+    }
+
+    .summary {
+      margin-top: 0.9rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .summary strong { color: var(--accent); }
+
+    .canvas {
+      border-radius: 26px;
+      border: 1px solid rgba(148,163,184,0.4);
+      background: radial-gradient(circle at top,#020617 0,#020617 60%);
+      padding: 1.2rem;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .canvas-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .canvas-inner {
+      flex: 1;
+      border-radius: 18px;
+      background: radial-gradient(circle at 20% 0%, rgba(56,189,248,0.24) 0, rgba(15,23,42,0.96) 40%);
+      border: 1px solid rgba(148,163,184,0.45);
+      padding: 0.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .points-grid {
+      width: 100%;
+      max-width: 520px;
+      aspect-ratio: 1/1;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.6);
+      position: relative;
+      background:
+        linear-gradient(#1e293b 1px, transparent 1px) 0 50%/100% 50% no-repeat,
+        linear-gradient(90deg,#1e293b 1px, transparent 1px) 50% 0/50% 100% no-repeat,
+        radial-gradient(circle at 0 100%, rgba(15,23,42,0.9), rgba(15,23,42,1));
+    }
+
+    .axis-label {
+      position: absolute;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .axis-label.x { bottom: 4px; left: 50%; transform: translateX(-50%); }
+
+    .axis-label.y {
+      left: 4px;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+      transform-origin: left top;
+    }
+
+    .point {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 2px solid rgba(15,23,42,0.9);
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 600;
+    }
+
+    .point-1 {
+      background: #22c55e;
+      box-shadow: 0 0 12px rgba(34,197,94,0.7);
+    }
+
+    .point-0 {
+      background: #f97316;
+      box-shadow: 0 0 12px rgba(248,113,113,0.8);
+    }
+
+    .decision-line {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .chip {
+      padding: 0.12rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.5);
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: rgba(15,23,42,0.92);
+    }
+
+    input[type="number"] {
+      background: rgba(15,23,42,0.95);
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      padding: 0.25rem 0.7rem;
+      color: var(--text);
+      font-size: 0.85rem;
+      max-width: 120px;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+    }
+
+    @media (max-width: 880px) {
+      .layout {
+        grid-template-columns: minmax(0,1fr);
+      }
+      main { padding-inline: 1.1rem; }
+      .points-grid { max-width: 320px; }
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-badge">P</div>
+      <span>Cómo entrenar a tu perceptrón</span>
+    </div>
+        <nav>
+        <a class="link" href="teoria.html">Teoría</a>
+        <a class="link active" href="interactivo.html">Demo interactiva</a>
+        <a class="link" href="pdf.html">PDF original</a>
+        <a class="btn" href="index.html">Inicio</a>
+        </nav>
+
+  </div>
+</header>
+
+<main>
+  <div class="layout">
+    <!-- Panel izquierdo -->
+    <section class="card">
+      <div class="pill-section">Parte II · Perceptrón interactivo</div>
+      <h1 class="title">Juega con los parámetros y las puertas lógicas</h1>
+      <p class="muted">
+        Selecciona la puerta (AND u OR), decide si quieres usar los parámetros
+        entrenados o ajustar manualmente <em>b</em>, <em>w₁</em>, <em>w₂</em> y observa cómo cambian las salidas
+        y la frontera de decisión.
+      </p>
+
+      <!-- Puerta lógica -->
+      <div class="gate-buttons">
+        <button class="gate-btn active" data-gate="AND">AND</button>
+        <button class="gate-btn" data-gate="OR">OR</button>
+      </div>
+
+      <!-- Modo -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.1rem;">
+        <span class="muted" style="font-size:0.85rem;">Modo de parámetros</span>
+        <div class="mode-toggle">
+          <button id="modeTrained" class="active" type="button">Entrenados</button>
+          <button id="modeManual" type="button">Manuales</button>
+        </div>
+      </div>
+
+      <!-- Controles de parámetros -->
+      <div class="controls-group" id="paramsGroup">
+        <div class="muted" style="font-size:0.85rem;margin-bottom:0.2rem;">
+          u(x₁,x₂) = b + w₁·x₁ + w₂·x₂ → F(x) = σ(u)
+        </div>
+
+        <div class="slider-row">
+          <label for="bRange">b (bias)</label>
+          <input id="bRange" type="range" min="-25" max="5" step="0.1" />
+          <span class="slider-value" id="bValue"></span>
+        </div>
+        <div class="slider-row">
+          <label for="w1Range">w₁</label>
+          <input id="w1Range" type="range" min="-20" max="20" step="0.1" />
+          <span class="slider-value" id="w1Value"></span>
+        </div>
+        <div class="slider-row">
+          <label for="w2Range">w₂</label>
+          <input id="w2Range" type="range" min="-20" max="20" step="0.1" />
+          <span class="slider-value" id="w2Value"></span>
+        </div>
+
+        <button class="btn-small" id="btnReset">⚙️ Reset a parámetros entrenados</button>
+        <p class="muted" style="margin-top:0.45rem;font-size:0.8rem;">
+          Tanto AND como OR son linealmente separables. Cambiando b, w₁ y w₂ puedes
+          explorar distintas rectas que separan correctamente los cuatro puntos.
+        </p>
+      </div>
+
+      <!-- Umbral -->
+      <div class="controls-threshold">
+        <div><strong>Umbral de decisión τ</strong></div>
+        <div class="controls-row">
+          <input id="tauRange" type="range" min="0.1" max="0.9" step="0.01" value="0.5" />
+          <span class="muted">τ = <span id="tauValue">0.50</span></span>
+        </div>
+        <p class="muted" style="margin-top:0.45rem;">
+          Regla de decisión:
+          ŷ = 1 si F(x) ≥ τ, y
+          ŷ = 0 si F(x) &lt; τ.
+        </p>
+      </div>
+
+      <!-- Entrenamiento -->
+      <div class="controls-train">
+        <div><strong>Entrenamiento (descenso por gradiente)</strong></div>
+        <div class="controls-row">
+          <div style="flex:1;min-width:150px;">
+            <div class="muted" style="font-size:0.85rem;margin-bottom:0.2rem;">Tasa de aprendizaje α</div>
+            <input id="alphaInput" type="number" step="0.01" value="0.1" min="0.001" max="5" />
+          </div>
+          <div style="flex:1;min-width:150px;">
+            <div class="muted" style="font-size:0.85rem;margin-bottom:0.2rem;">Iteraciones (pasos de gradiente)</div>
+            <input id="itersInput" type="number" step="1" value="200" min="1" max="10000" />
+          </div>
+        </div>
+        <div style="margin-top:0.7rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button class="btn-small" id="btnTrain">Entrenar perceptrón</button>
+          <button class="btn-small secondary" id="btnTrainStep">Un solo paso de gradiente</button>
+        </div>
+        <p class="muted" style="margin-top:0.45rem;font-size:0.8rem;">
+          Se minimiza la función de pérdida
+          L(b, w₁, w₂) = Σ (yₖ − F(xₖ))² sobre los cuatro puntos de la puerta lógica seleccionada.
+        </p>
+      </div>
+
+      <!-- Tabla -->
+      <table class="truth-table">
+        <thead>
+        <tr>
+          <th>x₁</th>
+          <th>x₂</th>
+          <th>y (verdad)</th>
+          <th>F(x) (modelo)</th>
+          <th>Clase ŷ</th>
+        </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+
+      <div class="summary" id="summaryText"></div>
+    </section>
+
+    <!-- Panel derecho -->
+    <section class="canvas card">
+      <div class="canvas-header">
+        <span>Plano (x₁, x₂) y frontera de decisión</span>
+        <span class="chip" id="chipInfo">Perceptrón 1 capa</span>
+      </div>
+      <div class="canvas-inner">
+        <div class="points-grid" id="pointsGrid">
+          <div class="axis-label x">x₁</div>
+          <div class="axis-label y">x₂</div>
+          <svg class="decision-line" id="decisionSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <line id="lineDecision" x1="0" y1="0" x2="100" y2="100"
+                  stroke="rgba(148,163,184,0.8)" stroke-width="0.7" stroke-dasharray="3,3" />
+          </svg>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  // ======= Modelo =======
+  function sigmoid(z) {
+    return 1 / (1 + Math.exp(-z));
+  }
+
+  // Pesos entrenados del informe
+  const trainedParams = {
+    AND: { b: -20.8241, w1: 13.8266, w2: 13.8266 },
+    OR:  { b: -6.7945,  w1: 14.0477, w2: 14.0477 }
+  };
+
+  // Conjuntos de datos para cada puerta
+  const dataSets = {
+    AND: [
+      { x1: 0, x2: 0, y: 0 },
+      { x1: 0, x2: 1, y: 0 },
+      { x1: 1, x2: 0, y: 0 },
+      { x1: 1, x2: 1, y: 1 }
+    ],
+    OR: [
+      { x1: 0, x2: 0, y: 0 },
+      { x1: 0, x2: 1, y: 1 },
+      { x1: 1, x2: 0, y: 1 },
+      { x1: 1, x2: 1, y: 1 }
+    ]
+  };
+
+  function truth(gate, x1, x2) {
+    if (gate === "AND") return (x1 && x2) ? 1 : 0;
+    return (x1 || x2) ? 1 : 0; // OR
+  }
+
+  // ======= UI refs =======
+  const gateButtons = document.querySelectorAll(".gate-btn");
+  const modeTrainedBtn = document.getElementById("modeTrained");
+  const modeManualBtn  = document.getElementById("modeManual");
+
+  const bRange  = document.getElementById("bRange");
+  const w1Range = document.getElementById("w1Range");
+  const w2Range = document.getElementById("w2Range");
+  const bValue  = document.getElementById("bValue");
+  const w1Value = document.getElementById("w1Value");
+  const w2Value = document.getElementById("w2Value");
+  const btnReset = document.getElementById("btnReset");
+
+  const tauRange = document.getElementById("tauRange");
+  const tauValue = document.getElementById("tauValue");
+
+  const alphaInput = document.getElementById("alphaInput");
+  const itersInput = document.getElementById("itersInput");
+  const btnTrain = document.getElementById("btnTrain");
+  const btnTrainStep = document.getElementById("btnTrainStep");
+
+  const tableBody = document.getElementById("tableBody");
+  const summaryText = document.getElementById("summaryText");
+  const pointsGrid = document.getElementById("pointsGrid");
+  const decisionSvg = document.getElementById("decisionSvg");
+  const lineDecision = document.getElementById("lineDecision");
+  const chipInfo = document.getElementById("chipInfo");
+
+  let currentGate = "AND";
+  let mode = "trained"; // 'trained' | 'manual'
+  let params = { ...trainedParams.AND };
+
+  function setSlidersFromParams() {
+    bRange.value  = params.b;
+    w1Range.value = params.w1;
+    w2Range.value = params.w2;
+    bValue.textContent  = params.b.toFixed(2);
+    w1Value.textContent = params.w1.toFixed(2);
+    w2Value.textContent = params.w2.toFixed(2);
+  }
+
+  function readSlidersToParams() {
+    params.b  = parseFloat(bRange.value);
+    params.w1 = parseFloat(w1Range.value);
+    params.w2 = parseFloat(w2Range.value);
+    bValue.textContent  = params.b.toFixed(2);
+    w1Value.textContent = params.w1.toFixed(2);
+    w2Value.textContent = params.w2.toFixed(2);
+  }
+
+  function evalModel(x1, x2) {
+    const tau = parseFloat(tauRange.value);
+    const u = params.b + params.w1 * x1 + params.w2 * x2;
+    const f = sigmoid(u);
+    return { f, yHat: f >= tau ? 1 : 0 };
+  }
+
+  // Un paso de gradiente sobre el dataset de la puerta actual
+  function gradientStep(alpha) {
+    const data = dataSets[currentGate];
+    let gradB = 0, gradW1 = 0, gradW2 = 0;
+
+    data.forEach(p => {
+      const u = params.b + params.w1 * p.x1 + params.w2 * p.x2;
+      const f = sigmoid(u);
+      const error = p.y - f;            // y_k - F(x_k)
+      const phiPrime = f * (1 - f);     // σ'(u)
+
+      gradB  += -2 * error * phiPrime;
+      gradW1 += -2 * error * phiPrime * p.x1;
+      gradW2 += -2 * error * phiPrime * p.x2;
+    });
+
+    params.b  -= alpha * gradB;
+    params.w1 -= alpha * gradW1;
+    params.w2 -= alpha * gradW2;
+  }
+
+  function updateTableAndSummary() {
+    const tau = parseFloat(tauRange.value);
+    tauValue.textContent = tau.toFixed(2);
+
+    const pts = [
+      { x1: 0, x2: 0 },
+      { x1: 0, x2: 1 },
+      { x1: 1, x2: 0 },
+      { x1: 1, x2: 1 }
+    ];
+
+    tableBody.innerHTML = "";
+    let correct = 0;
+
+    pts.forEach(p => {
+      const yTrue = truth(currentGate, p.x1, p.x2);
+      const { f, yHat } = evalModel(p.x1, p.x2);
+      if (yHat === yTrue) correct++;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${p.x1}</td>
+        <td>${p.x2}</td>
+        <td>${yTrue}</td>
+        <td>${f.toFixed(4)}</td>
+        <td>
+          <span class="${yHat === 1 ? "badge-class-1" : "badge-class-0"}">
+            ${yHat}
+          </span>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+
+    const msgBase =
+      `Para la puerta <strong>${currentGate}</strong>, con τ = ${tau.toFixed(2)}, ` +
+      `el modelo clasifica correctamente <strong>${correct}/4</strong> puntos. `;
+
+    const msgExtra =
+      mode === "trained"
+        ? "Estás usando los parámetros obtenidos en el informe (descenso por gradiente)."
+        : "Estás usando parámetros ajustados manualmente o mediante el entrenamiento interactivo.";
+
+    summaryText.innerHTML = msgBase + msgExtra;
+  }
+
+  function renderPointsAndLine() {
+    pointsGrid.querySelectorAll(".point").forEach(p => p.remove());
+
+    const pts = [
+      { x1: 0, x2: 0 },
+      { x1: 0, x2: 1 },
+      { x1: 1, x2: 0 },
+      { x1: 1, x2: 1 }
+    ];
+
+    pts.forEach(p => {
+      const yTrue = truth(currentGate, p.x1, p.x2);
+      const { yHat } = evalModel(p.x1, p.x2);
+
+      const div = document.createElement("div");
+      div.className = "point " + (yHat === 1 ? "point-1" : "point-0");
+      div.textContent = yTrue;
+
+      const left = 15 + 70 * p.x1;
+      const top  = 85 - 70 * p.x2;
+
+      div.style.left = left + "%";
+      div.style.top  = top + "%";
+      pointsGrid.appendChild(div);
+    });
+
+    decisionSvg.style.opacity = 1;
+    chipInfo.textContent = "Perceptrón 1 capa";
+
+    const m = params;
+    const yAt0 = (-m.b) / m.w2;
+    const yAt1 = (-m.b - m.w1) / m.w2;
+
+    function clamp(v) { return Math.max(-0.2, Math.min(1.2, v)); }
+
+    const y0 = 100 * (1 - clamp(yAt0));
+    const y1 = 100 * (1 - clamp(yAt1));
+
+    lineDecision.setAttribute("x1", "0");
+    lineDecision.setAttribute("y1", y0.toString());
+    lineDecision.setAttribute("x2", "100");
+    lineDecision.setAttribute("y2", y1.toString());
+  }
+
+  function updateAll() {
+    updateTableAndSummary();
+    renderPointsAndLine();
+  }
+
+  // ======= Eventos =======
+  gateButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      gateButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentGate = btn.dataset.gate;
+
+      // Cambiamos a parámetros entrenados por defecto
+      params = { ...trainedParams[currentGate] };
+      setSlidersFromParams();
+
+      // Desactivamos sliders si está en modo "entrenados"
+      const disabled = (mode === "trained");
+      bRange.disabled = disabled;
+      w1Range.disabled = disabled;
+      w2Range.disabled = disabled;
+
+      updateAll();
+    });
+  });
+
+  modeTrainedBtn.addEventListener("click", () => {
+    mode = "trained";
+    modeTrainedBtn.classList.add("active");
+    modeManualBtn.classList.remove("active");
+    params = { ...trainedParams[currentGate] };
+    setSlidersFromParams();
+    bRange.disabled = true;
+    w1Range.disabled = true;
+    w2Range.disabled = true;
+    updateAll();
+  });
+
+  modeManualBtn.addEventListener("click", () => {
+    mode = "manual";
+    modeManualBtn.classList.add("active");
+    modeTrainedBtn.classList.remove("active");
+    bRange.disabled = false;
+    w1Range.disabled = false;
+    w2Range.disabled = false;
+    updateAll();
+  });
+
+  [bRange, w1Range, w2Range].forEach(input => {
+    input.addEventListener("input", () => {
+      readSlidersToParams();
+      updateAll();
+    });
+  });
+
+  btnReset.addEventListener("click", () => {
+    params = { ...trainedParams[currentGate] };
+    setSlidersFromParams();
+    updateAll();
+  });
+
+  tauRange.addEventListener("input", updateAll);
+
+  // Entrenamiento
+  function getAlpha() {
+    const raw = alphaInput.value.replace(',', '.');
+    const a = parseFloat(raw);
+    return isNaN(a) || a <= 0 ? 0.1 : a;
+  }
+
+  function getIterations() {
+    const n = parseInt(itersInput.value, 10);
+    return isNaN(n) || n <= 0 ? 1 : n;
+  }
+
+  btnTrain.addEventListener("click", () => {
+    const alpha = getAlpha();
+    const iters = getIterations();
+
+    // Pasamos a modo "manual" (estamos modificando los parámetros)
+    mode = "manual";
+    modeManualBtn.classList.add("active");
+    modeTrainedBtn.classList.remove("active");
+    bRange.disabled = false;
+    w1Range.disabled = false;
+    w2Range.disabled = false;
+
+    for (let k = 0; k < iters; k++) {
+      gradientStep(alpha);
+    }
+    setSlidersFromParams();
+    updateAll();
+  });
+
+  btnTrainStep.addEventListener("click", () => {
+    const alpha = getAlpha();
+
+    mode = "manual";
+    modeManualBtn.classList.add("active");
+    modeTrainedBtn.classList.remove("active");
+    bRange.disabled = false;
+    w1Range.disabled = false;
+    w2Range.disabled = false;
+
+    gradientStep(alpha);
+    setSlidersFromParams();
+    updateAll();
+  });
+
+  // ======= Init =======
+  params = { ...trainedParams.AND };
+  setSlidersFromParams();
+  updateAll();
+</script>
+</body>
+</html>

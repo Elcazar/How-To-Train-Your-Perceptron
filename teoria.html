@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cómo entrenar a tu perceptrón – Desarrollo teórico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- MathJax para las fórmulas -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-alt: #020617;
+      --card: rgba(15,23,42,0.96);
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.16);
+      --border-subtle: rgba(148,163,184,0.35);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --radius: 18px;
+      --shadow-soft: 0 18px 40px rgba(0,0,0,0.55);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1f2937 0, #020617 55%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(16px);
+      background: linear-gradient(to right, rgba(15,23,42,0.92), rgba(15,23,42,0.97));
+      border-bottom: 1px solid rgba(148,163,184,0.35);
+    }
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0.9rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+    .logo {
+      font-weight: 600;
+      font-size: 0.98rem;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .logo-badge {
+      width: 26px;
+      height: 26px;
+      border-radius: 12px;
+      background: radial-gradient(circle at 20% 0%, #22c55e 0, #22c55e 24%, #0f172a 55%);
+      border: 1px solid rgba(148,163,184,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 14px rgba(34,197,94,0.8);
+      font-size: 0.74rem;
+    }
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+    }
+    nav a.link {
+      padding: 0.4rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      color: var(--muted);
+    }
+    nav a.link.active {
+      border-color: rgba(56,189,248,0.6);
+      background: rgba(15,23,42,0.8);
+      color: var(--accent);
+    }
+    nav a.btn {
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.35);
+      font-size: 0.86rem;
+    }
+    main {
+      max-width: 1100px;
+      margin: 1.2rem auto 2.5rem;
+      padding: 0 1.5rem 2.5rem;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 26px;
+      padding: 1.8rem 1.6rem 2.3rem;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-subtle);
+    }
+    .pill-section {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.18rem 0.65rem;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.92);
+      border: 1px solid rgba(148,163,184,0.35);
+      font-size: 0.77rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .doc-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin-bottom: 1.4rem;
+    }
+    .doc-toc {
+      padding: 0.65rem 0.75rem;
+      border-radius: 12px;
+      background: rgba(15,23,42,0.96);
+      border: 1px solid rgba(148,163,184,0.35);
+      font-size: 0.83rem;
+      color: var(--muted);
+      margin-bottom: 1.6rem;
+    }
+    .doc-toc a {
+      margin-right: 0.35rem;
+      white-space: nowrap;
+    }
+    .doc-section {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #e5e7eb;
+    }
+    .doc-section h3 {
+      margin-top: 1.5rem;
+      margin-bottom: 0.4rem;
+      font-size: 1.25rem;
+    }
+    .doc-section h4 {
+      margin-top: 1.2rem;
+      margin-bottom: 0.35rem;
+      font-size: 1.02rem;
+    }
+    p { margin-top: 0.35rem; margin-bottom: 0.35rem; }
+    ul { margin-top: 0.25rem; margin-bottom: 0.25rem; padding-left: 1.2rem; }
+    .eq-block {
+      margin: 0.45rem 0;
+      padding: 0.5rem 0.7rem;
+      border-radius: 12px;
+      background: rgba(15,23,42,0.92);
+      border: 1px solid rgba(148,163,184,0.26);
+      overflow-x: auto;
+    }
+    table {
+      border-collapse: collapse;
+      margin: 0.6rem 0;
+      width: auto;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border: 1px solid rgba(148,163,184,0.4);
+      padding: 0.25rem 0.5rem;
+      text-align: center;
+    }
+    th {
+      background: rgba(15,23,42,0.9);
+      font-weight: 500;
+    }
+    @media (max-width: 720px) {
+      .header-inner { padding-inline: 1rem; }
+      main { padding-inline: 1rem; }
+      .card { padding-inline: 1.2rem; }
+      .doc-toc { font-size: 0.8rem; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-badge">P</div>
+        <span>Cómo entrenar a tu perceptrón</span>
+      </div>
+        <nav>
+          <a class="link active" href="teoria.html">Teoría</a>
+          <a class="link" href="interactivo.html">Demo interactiva</a>
+          <a class="link" href="pdf.html">PDF original</a>
+          <a class="btn" href="index.html">Inicio</a>
+        </nav>
+
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <div class="pill-section">Parte I · Desarrollo teórico completo (sin código)</div>
+
+      <div class="doc-meta">
+        <span><strong>Título:</strong> Cómo entrenar a tu perceptrón</span>
+        <span><strong>Autores:</strong> Andrés Gil Vicente, Jorge Carnicero Príncipe, Jorge González Pérez, Liam Esgueva González, Sergio Fernández Cordero, Alejandro Alcázar Mendoza</span>
+      </div>
+
+      <!-- Navegación rápida -->
+      <div class="doc-toc">
+        <strong>Navegación rápida:</strong>
+        <a href="#abstract">Resumen</a> ·
+        <a href="#introduccion">Introducción</a> ·
+        <a href="#perceptron">Perceptrón</a> ·
+        <a href="#derivadas-simple">Derivadas y pérdida</a> ·
+        <a href="#puertas-logicas">Puertas AND / OR</a> ·
+        <a href="#limitacion-xor">Limitación XOR</a> ·
+        <a href="#multicapa">Perceptrón multicapa</a> ·
+        <a href="#derivadas-multicapa">Derivadas multicapa</a> ·
+        <a href="#parametros-multicapa">Parámetros y diagrama</a> ·
+        <a href="#xor-multicapa">XOR con dos capas</a>
+      </div>
+
+    <div class="doc-section">
+
+      <!-- ABSTRACT -->
+      <h3 id="abstract">Resumen</h3>
+      <p>
+        En este proyecto se estudia el funcionamiento y entrenamiento de un perceptrón, un modelo básico dentro del
+        aprendizaje automático supervisado. Se parte del problema de clasificación binaria y se propone una aproximación
+        continua mediante funciones de activación diferenciables, como la sigmoide. A través de una serie de ejercicios,
+        se exploran aspectos teóricos y prácticos del modelo, incluyendo el cálculo de derivadas, la definición de
+        funciones de pérdida y la implementación del algoritmo de descenso por gradiente.
+      </p>
+      <p>
+        Se entrena el perceptrón para imitar el comportamiento de puertas lógicas simples (AND, OR) y se analiza su
+        limitación frente al caso XOR. Finalmente, se introduce el perceptrón multicapa como solución a estas
+        limitaciones, extendiendo la capacidad del modelo para representar funciones más complejas.
+      </p>
+
+      <!-- INTRODUCCIÓN -->
+      <h3 id="introduccion">1. Introducción</h3>
+      <p>
+        El proyecto comienza presentando el problema de clasificación binaria, donde el objetivo es asignar a un objeto
+        una categoría (0 o 1) en función de sus características. Esta forma de clasificar es sencilla, pero no permite
+        estudiar con claridad la influencia de cada característica sobre la decisión, ya que la función de salida es
+        discreta.
+      </p>
+      <p>
+        Para superar esta limitación, se propone reemplazar la función binaria por una función continua que permita
+        aplicar herramientas del cálculo diferencial y analizar cómo variaciones en las características afectan al
+        resultado de la clasificación.
+      </p>
+      <p>
+        De forma más formal, el perceptrón busca aproximar una función de clasificación
+      </p>
+      <div class="eq-block">
+        \[
+          C : \mathbb{R}^n \rightarrow \{0,1\},
+        \]
+      </div>
+      <p>
+        que asigna el valor \(1\) si el objeto posee las características adecuadas para pertenecer a una categoría de
+        interés y \(0\) en caso contrario.
+      </p>
+      <p>
+        La aproximación se realiza mediante la composición de:
+      </p>
+      <ul>
+        <li>
+          Una <strong>función de nivel</strong> \( u : \mathbb{R}^n \rightarrow \mathbb{R} \), que representa una
+          combinación lineal de las características del objeto.
+        </li>
+        <li>
+          Una <strong>función de activación</strong> \( \phi : \mathbb{R} \rightarrow \mathbb{R} \), que transforma la
+          salida de \(u\) y valora su relevancia. Su resultado se compara después con un umbral de decisión.
+        </li>
+      </ul>
+      <p>
+        El modelo resultante puede escribirse como
+      </p>
+      <div class="eq-block">
+        \[
+          C(x) \approx (\phi \circ u)(x),
+        \]
+      </div>
+      <p>
+        y se decide que el objeto pertenece a la categoría de interés si el valor obtenido supera un umbral prefijado
+        \(\tau_0\), es decir, si
+      </p>
+      <div class="eq-block">
+        \[
+          (\phi \circ u)(x) > \tau_0.
+        \]
+      </div>
+
+      <!-- PERCEPTRÓN -->
+      <h3 id="perceptron">2. El perceptrón</h3>
+      <p>
+        La función de nivel empleada en el perceptrón es:
+      </p>
+      <div class="eq-block">
+        \[
+          u(x_1,\ldots,x_n) = b + w_1 x_1 + \ldots + w_n x_n \equiv b + w^\mathrm{t} x,
+          \tag{1}
+        \]
+      </div>
+      <p>
+        donde se ha considerado \(w = (w_1,\ldots,w_n)^\mathrm{t}\) y \(x = (x_1,\ldots,x_n)^\mathrm{t}\) como vectores
+        columna, y se ha introducido un sesgo \(b \in \mathbb{R}\).
+      </p>
+      <p>
+        La propuesta histórica más relevante para la función de activación es la <strong>sigmoide</strong>:
+      </p>
+      <div class="eq-block">
+        \[
+          \phi(z) = \frac{1}{1 + e^{-z}},
+          \tag{2}
+        \]
+      </div>
+      <p>
+        que es diferenciable y cuyos valores cambian suavemente entre 0 y 1 (en \(z = 0\) toma un valor intermedio).
+      </p>
+      <p>
+        Se usará la función
+      </p>
+      <div class="eq-block">
+        \[
+          F(x_1,\ldots,x_n) = (\phi \circ u)(x_1,\ldots,x_n)
+        \]
+      </div>
+      <p>
+        para aproximar el clasificador \(C(x_1,\ldots,x_n)\). La función \(u\) (y por tanto \(F\)) depende también de
+        los parámetros \(\theta = (b, w_1,\ldots,w_n)\).
+      </p>
+      <p>
+        Estrictamente hablando,
+      </p>
+      <div class="eq-block">
+        \[
+        u : \mathbb{R}^n \times \mathbb{R} \times \mathbb{R}^n \rightarrow \mathbb{R}, \qquad
+        F : \mathbb{R}^n \times \mathbb{R} \times \mathbb{R}^n \rightarrow \mathbb{R},
+        \]
+        \[
+        u(x;\theta) \equiv u(x_1,\ldots,x_n; b, w_1,\ldots,w_n),
+        \]
+        \[
+        F(x;\theta) = \phi(u(x;\theta)).
+        \]
+      </div>
+      <p>
+        Finalmente, la función de pérdida a minimizar es
+      </p>
+      <div class="eq-block">
+        \[
+          L(b,w_1,\dots,w_n) = \sum_{k=1}^{N} \left( y_k - F(x^{(k)}) \right)^2.
+          \tag{3}
+        \]
+      </div>
+
+      <!-- DERIVADAS PERCEPTRÓN SIMPLE -->
+      <h3 id="derivadas-simple">3. Derivadas y gradiente del perceptrón de una capa</h3>
+
+      <h4>3.1 Derivadas parciales de \(u\)</h4>
+      <p>Partiendo de</p>
+      <div class="eq-block">
+        \[
+          u(x_1,\ldots,x_n) = b + w_1 x_1 + \ldots + w_n x_n,
+        \]
+      </div>
+      <p>las derivadas parciales respecto a los parámetros son:</p>
+      <div class="eq-block">
+        \[
+          \frac{\partial u}{\partial b} = 1, \qquad
+          \frac{\partial u}{\partial w_i} = x_i, \quad \forall i = 1,\ldots,n.
+        \]
+      </div>
+
+      <h4>3.2 Derivadas parciales de \(F = \phi \circ u\)</h4>
+      <p>Escribimos</p>
+      <div class="eq-block">
+        \[
+          F(x;\theta) = (\phi \circ u)(x;\theta) = \phi(u(x;\theta)).
+        \]
+      </div>
+      <p>Aplicando la regla de la cadena:</p>
+      <div class="eq-block">
+        \[
+          \frac{\partial F}{\partial b}
+          = \frac{\partial F}{\partial u} \cdot \frac{\partial u}{\partial b}
+          = \phi'(u(x;\theta)) \cdot 1
+          = \phi'(u(x;\theta)),
+        \]
+        \[
+          \frac{\partial F}{\partial w_j}
+          = \frac{\partial F}{\partial u} \cdot \frac{\partial u}{\partial w_j}
+          = \phi'(u(x;\theta)) \cdot x_j.
+        \]
+      </div>
+
+      <h4>3.3 Derivada de la función sigmoide</h4>
+      <p>Partiendo de \(\phi(z) = \dfrac{1}{1+e^{-z}}\), se calcula:</p>
+      <div class="eq-block">
+        \[
+          \phi'(z)
+          = (-1)\,(1+e^{-z})^{-2}(-1)e^{-z}
+          = \frac{e^{-z}}{(1+e^{-z})^2}
+          = \frac{1}{1+e^{-z}}\,\frac{e^{-z}}{1+e^{-z}}
+          = \phi(z)\,\bigl(1-\phi(z)\bigr).
+        \]
+      </div>
+      <p>Es decir,</p>
+      <div class="eq-block">
+        \[
+          \phi'(z) = \phi(z)\,\bigl(1 - \phi(z)\bigr).
+          \tag{4}
+        \]
+      </div>
+
+      <h4>3.4 Gradiente de la función de pérdida \(L\)</h4>
+      <p>La función de pérdida es:</p>
+      <div class="eq-block">
+        \[
+          L(b,\vec{w}) = \sum_{k=1}^{N} \left( y_k - F(x^{(k)}) \right)^2,
+          \quad F(x^{(k)}) = \phi(u(x^{(k)})).
+        \]
+      </div>
+      <p>Aplicando la regla de la cadena:</p>
+      <div class="eq-block">
+        \[
+          \frac{\partial L}{\partial b}
+          = \sum_{k=1}^{N} 2 \left( y_k - \phi(u(x^{(k)})) \right)
+            \cdot \bigl(-\phi'(u(x^{(k)}))\bigr)
+          = -2 \sum_{k=1}^{N} \left( y_k - \phi(u(x^{(k)})) \right)\phi'(u(x^{(k)})),
+        \]
+        \[
+          \frac{\partial L}{\partial w_i}
+          = -2 \sum_{k=1}^{N} x_i^{(k)}
+              \left( y_k - \phi(u(x^{(k)})) \right)\phi'(u(x^{(k)})),
+          \quad \forall i=1,\ldots,n.
+        \]
+      </div>
+
+      <!-- PUERTAS LÓGICAS AND/OR -->
+      <h3 id="puertas-logicas">4. Puertas lógicas AND y OR</h3>
+      <p>
+        Un caso sencillo de clasificación binaria viene dado por las puertas lógicas AND y OR. Se consideran como
+        funciones \(\mathbb{R}^2 \rightarrow \mathbb{R}\) con cuatro datos:
+      </p>
+      <p><strong>Puerta AND:</strong></p>
+      <div class="eq-block">
+        \[
+          (0,0)\mapsto 0,\quad
+          (0,1)\mapsto 0,\quad
+          (1,0)\mapsto 0,\quad
+          (1,1)\mapsto 1.
+        \]
+      </div>
+      <p><strong>Puerta OR:</strong></p>
+      <div class="eq-block">
+        \[
+          (0,0)\mapsto 0,\quad
+          (0,1)\mapsto 1,\quad
+          (1,0)\mapsto 1,\quad
+          (1,1)\mapsto 1.
+        \]
+      </div>
+      <p>
+        El objetivo es obtener funciones \(F = \phi \circ u\) que aproximen el comportamiento de estas puertas utilizando
+        descenso por gradiente sobre la función de pérdida \(L\).
+      </p>
+
+      <h4>4.1 Valores de \(F(x^{(k)})\)</h4>
+      <p>
+        Para los cuatro puntos \(x^{(1)}=(0,0)\), \(x^{(2)}=(0,1)\), \(x^{(3)}=(1,0)\), \(x^{(4)}=(1,1)\), se tiene:
+      </p>
+      <div class="eq-block">
+        \[
+        \begin{aligned}
+          F(x^{(1)}) &= \phi(b),\\
+          F(x^{(2)}) &= \phi(w_2 + b),\\
+          F(x^{(3)}) &= \phi(w_1 + b),\\
+          F(x^{(4)}) &= \phi(w_1 + w_2 + b).
+        \end{aligned}
+        \]
+      </div>
+
+      <h4>4.2 Función de pérdida para AND</h4>
+      <p>
+        Para la puerta AND, con \(y_1 = y_2 = y_3 = 0\) y \(y_4 = 1\), la pérdida es:
+      </p>
+      <div class="eq-block">
+        \[
+        \begin{aligned}
+          L_{\text{AND}}(b,w_1,w_2)
+          &= \sum_{k=1}^4 \bigl(y_k - F(x^{(k)})\bigr)^2 \\
+          &= (\phi(b))^2 + (\phi(w_2+b))^2 + (\phi(w_1+b))^2
+          + \bigl(1-\phi(w_1+w_2+b)\bigr)^2.
+        \end{aligned}
+        \]
+      </div>
+
+      <h4>4.3 Función de pérdida para OR</h4>
+      <p>
+        Para la puerta OR, con \(y_1 = 0\), \(y_2 = y_3 = y_4 = 1\), se obtiene:
+      </p>
+      <div class="eq-block">
+        \[
+        \begin{aligned}
+          L_{\text{OR}}(b,w_1,w_2)
+          &= (\phi(b))^2
+          + \bigl(1-\phi(w_2+b)\bigr)^2
+          + \bigl(1-\phi(w_1+b)\bigr)^2
+          + \bigl(1-\phi(w_1+w_2+b)\bigr)^2.
+        \end{aligned}
+        \]
+      </div>
+
+      <h4>4.4 Gradiente completamente desarrollado para AND y OR</h4>
+      <p>
+        Aprovechando los cálculos anteriores y las derivadas de \(L\) en función de los parámetros, se desarrollan
+        explícitamente las expresiones.
+      </p>
+
+      <p><strong>Tabla AND:</strong></p>
+      <div class="eq-block">
+        \[
+        L_b
+        = -2\sum_{k=1}^{4} \left( y_k - \phi(u(x^{(k)})) \right)\,\phi'(u(x^{(k)}))
+        \]
+        \[
+        = -2\bigl(
+           -\phi(b)\,\phi'(b)
+           -\phi(w_2 + b)\,\phi'(w_2 + b)
+           -\phi(w_1 + b)\,\phi'(w_1 + b)
+           + (1-\phi(w_1+w_2+b))\,\phi'(w_1+w_2+b)
+           \bigr).
+        \]
+      </div>
+      <p>
+        En la derivada respecto a \(w_1\), se multiplica cada sumando por \(x_1^{(k)}\), que es 0 para \(k=1,2\):
+      </p>
+      <div class="eq-block">
+        \[
+        L_{w_1}
+        = -2\sum_{k=1}^{4} x_1^{(k)} \left( y_k - \phi(u(x^{(k)})) \right)\,\phi'(u(x^{(k)}))
+        \]
+        \[
+        = -2\bigl(
+            -\phi(w_1+b)\,\phi'(w_1+b)
+            + (1-\phi(w_1+w_2+b))\,\phi'(w_1+w_2+b)
+           \bigr).
+        \]
+      </div>
+      <p>
+        En la derivada respecto a \(w_2\), se multiplica cada sumando por \(x_2^{(k)}\), que es 0 para \(k=1,3\):
+      </p>
+      <div class="eq-block">
+        \[
+        L_{w_2}
+        = -2\sum_{k=1}^{4} x_2^{(k)} \left( y_k - \phi(u(x^{(k)})) \right)\,\phi'(u(x^{(k)}))
+        \]
+        \[
+        = -2\bigl(
+            -\phi(w_2+b)\,\phi'(w_2+b)
+            + (1-\phi(w_1+w_2+b))\,\phi'(w_1+w_2+b)
+           \bigr).
+        \]
+      </div>
+
+      <p><strong>Tabla OR:</strong></p>
+      <div class="eq-block">
+        \[
+        L_b
+        = -2\sum_{k=1}^{4} \left( y_k - \phi(u(x^{(k)})) \right)\,\phi'(u(x^{(k)}))
+        \]
+        \[
+        = -2\bigl(
+           -\phi(b)\,\phi'(b)
+           +(1-\phi(w_2+b))\,\phi'(w_2+b)
+           +(1-\phi(w_1+b))\,\phi'(w_1+b)
+           +(1-\phi(w_1+w_2+b))\,\phi'(w_1+w_2+b)
+           \bigr).
+        \]
+      </div>
+      <p>
+        En la derivada respecto a \(w_1\), se multiplica cada sumando por \(x_1^{(k)}\), que es 0 para \(k=1,2\):
+      </p>
+      <div class="eq-block">
+        \[
+        L_{w_1}
+        = -2\sum_{k=1}^{4} x_1^{(k)} \left( y_k - \phi(u(x^{(k)})) \right)\,\phi'(u(x^{(k)}))
+        \]
+        \[
+        = -2\bigl(
+            (1-\phi(w_1+b))\,\phi'(w_1+b)
+            +(1-\phi(w_1+w_2+b))\,\phi'(w_1+w_2+b)
+           \bigr).
+        \]
+      </div>
+      <p>
+        En la derivada respecto a \(w_2\), se multiplica cada sumando por \(x_2^{(k)}\), que es 0 para \(k=1,3\):
+      </p>
+      <div class="eq-block">
+        \[
+        L_{w_2}
+        = -2\sum_{k=1}^{4} x_2^{(k)} \left( y_k - \phi(u(x^{(k)})) \right)\,\phi'(u(x^{(k)}))
+        \]
+        \[
+        = -2\bigl(
+            (1-\phi(w_2+b))\,\phi'(w_2+b)
+            +(1-\phi(w_1+w_2+b))\,\phi'(w_1+w_2+b)
+           \bigr).
+        \]
+        \]
+      </div>
+      <p style="font-size:0.8rem;">
+        (Al desarrollar \(\phi'\), las expresiones quedan en función de \(\phi\) y \(1-\phi\)).
+      </p>
+
+      <h4>4.5 Curva de nivel \(u(x)=\tfrac{1}{2}\)</h4>
+      <p>
+        La curva en \(\mathbb{R}^2\) de puntos que cumplen \(w_1x_1 + w_2x_2 + b = \tfrac{1}{2}\) se obtiene despejando:
+      </p>
+      <div class="eq-block">
+        \[
+          x_2 = \frac{1/2 - w_1 x_1 - b}{w_2}.
+        \]
+      </div>
+      <p>
+        Con los parámetros ajustados para AND y OR se comprueba gráficamente que esta recta separa correctamente los
+        cuatro puntos del plano de acuerdo con el comportamiento de cada puerta.
+      </p>
+
+      <!-- LIMITACIÓN XOR -->
+      <h3 id="limitacion-xor">5. Limitación del perceptrón para XOR</h3>
+      <p>
+        Se intenta ahora entrenar \(F\) para que clasifique los puntos según la puerta lógica XOR:
+      </p>
+      <div class="eq-block">
+        \[
+          (0,0)\mapsto 0,\quad
+          (0,1)\mapsto 1,\quad
+          (1,0)\mapsto 1,\quad
+          (1,1)\mapsto 0.
+        \]
+      </div>
+      <p>
+        Estos datos no son linealmente separables. El perceptrón de una sola capa sólo puede generar fronteras de
+        decisión lineales (rectas en \(\mathbb{R}^2\)), por lo que no existe ninguna combinación de parámetros
+        \((b,w_1,w_2)\) que haga que el error sea prácticamente cero para los cuatro puntos simultáneamente.
+      </p>
+      <p>
+        Aunque el entrenamiento se lleve a cabo correctamente, la arquitectura por sí sola no tiene capacidad para
+        representar el patrón XOR. Las visualizaciones muestran que puntos de la misma clase quedan en lados opuestos
+        de la frontera de decisión. Este hecho motiva la introducción de redes con más capas: el
+        <strong>perceptrón multicapa</strong>.
+      </p>
+
+      <!-- PERCEPTRÓN MULTICAPA -->
+      <h3 id="multicapa">6. Perceptrón multicapa</h3>
+      <p>
+        El perceptrón de una única capa sólo puede hacer clasificaciones mediante rectas. La clasificación de XOR,
+        o la separación de puntos dentro/fuera de una circunferencia, no es posible así. Esta limitación se puede
+        solventar añadiendo capas al perceptrón. Con suficientes capas, un perceptrón con función de activación
+        sigmoide puede aproximar cualquier función continua (aproximador universal).
+      </p>
+      <p>
+        Se trabaja con una capa adicional. Una forma de interpretarla es usar \(n\) perceptrones de una sola capa, de
+        manera que las características originales \(x = (x_1,\dots,x_n)\) se transforman en nuevas características
+        \(\tilde{x} = (\tilde{x}_1,\dots,\tilde{x}_n)\), a las cuales se les aplica después un único perceptrón para
+        obtener un valor escalar de salida.
+      </p>
+      <p>
+        El primer bloque es la transformación lineal:
+      </p>
+      <div class="eq-block">
+        \[
+          U(x) = W x + b,
+        \]
+      </div>
+      <p>
+        donde \(W = (w_{ij})_{i,j=1}^n \in \mathbb{R}^{n\times n}\) y \(b = (b_1,\dots,b_n)^\mathrm{t} \in \mathbb{R}^n\).
+        El resultado es un vector
+      </p>
+      <div class="eq-block">
+        \[
+          s = U(x) =
+          \begin{bmatrix}
+            \sum_{j=1}^n w^{[1]}_{1j} x_j + b^{[1]}_1 \\
+            \vdots \\
+            \sum_{j=1}^n w^{[1]}_{nj} x_j + b^{[1]}_n
+          \end{bmatrix}.
+        \]
+      </div>
+      <p>
+        A continuación se aplica la activación componente a componente:
+      </p>
+      <div class="eq-block">
+        \[
+          \Phi(s_1,\dots,s_n) = (\phi(s_1),\dots,\phi(s_n)) = z.
+        \]
+      </div>
+      <p>
+        Sobre este vector \(z\) se aplica un perceptrón de salida:
+      </p>
+      <div class="eq-block">
+        \[
+          t = \sum_{i=1}^n w^{[2]}_i z_i + b^{[2]}, \qquad
+          F(x) = \phi(t).
+        \]
+      </div>
+      <p>
+        En resumen, el perceptrón de dos capas se escribe como:
+      </p>
+      <div class="eq-block">
+        \[
+          F(x) = (\phi \circ u \circ \Phi \circ U)(x).
+          \tag{5}
+        \]
+      </div>
+
+      <h4>6.1 Jacobiano de \(\Phi\)</h4>
+      <p>
+        Interpretamos \(\Phi\) como una función vectorial \(\vec{\Phi}:\mathbb{R}^n\to\mathbb{R}^n\) dada por
+        \(\vec{\Phi}(z) = (\phi_1(z),\dots,\phi_n(z))\), donde
+      </p>
+      <div class="eq-block">
+        \[
+          \phi_i(z_1,\dots,z_n) = \phi(z_i) = \frac{1}{1+e^{-z_i}}.
+        \]
+      </div>
+      <p>
+        El jacobiano es:
+      </p>
+      <div class="eq-block">
+        \[
+        D\Phi(z_1,\dots,z_n) =
+        \begin{bmatrix}
+        \phi'(z_1) & 0           & \dots & 0 \\
+        0          & \phi'(z_2)  & \dots & 0 \\
+        \vdots     & \vdots      & \ddots & \vdots \\
+        0          & 0           & \dots & \phi'(z_n)
+        \end{bmatrix},
+        \]
+      </div>
+      <p>ya que cada \(\phi_i\) sólo depende de su coordenada \(z_i\).</p>
+
+      <!-- DERIVADAS MULTICAPA -->
+      <h3 id="derivadas-multicapa">7. Derivadas en el perceptrón multicapa</h3>
+
+      <h4>7.1 Derivadas parciales en la capa de salida</h4>
+      <p>
+        Para distinguir los parámetros de cada capa se emplean superíndices: \(b^{[2]}\) y
+        \(w^{[2]} = (w^{[2]}_1,\dots,w^{[2]}_n)\) en la capa de salida, y \(b^{[1]}_i\), \(w^{[1]}_{ij}\) para la capa
+        oculta. Si \(z = \Phi(U(x))\), entonces
+      </p>
+      <div class="eq-block">
+        \[
+          t = \sum_{i=1}^n w^{[2]}_i z_i + b^{[2]}, \qquad
+          F(x) = \phi(t).
+        \]
+      </div>
+      <p>Las derivadas en la capa de salida son:</p>
+      <div class="eq-block">
+        \[
+          \frac{\partial F}{\partial b^{[2]}}
+          = \phi'(t),
+        \]
+        \[
+          \frac{\partial F}{\partial w^{[2]}_i}
+          = \phi'(t)\, z_i, \quad i = 1,\dots,n.
+        \]
+      </div>
+
+      <h4>7.2 Derivadas parciales en la capa oculta</h4>
+      <p>
+        Recordamos las definiciones:
+      </p>
+      <div class="eq-block">
+        \[
+        s_i = \sum_{j=1}^n w^{[1]}_{ij} x_j + b^{[1]}_i, \qquad
+        z_i = \phi(s_i), \qquad
+        t   = \sum_{i=1}^n w^{[2]}_i z_i + b^{[2]}, \qquad
+        F   = \phi(t).
+        \]
+      </div>
+      <p>Aplicando la regla de la cadena:</p>
+      <div class="eq-block">
+        \[
+          \frac{\partial F}{\partial b^{[1]}_i}
+          = \frac{\partial F}{\partial t}
+            \frac{\partial t}{\partial z_i}
+            \frac{\partial z_i}{\partial s_i}
+            \frac{\partial s_i}{\partial b^{[1]}_i}
+          = \phi'(t)\,w^{[2]}_i\,\phi'(s_i),
+        \]
+        \[
+          \frac{\partial F}{\partial w^{[1]}_{ij}}
+          = \phi'(t)\,w^{[2]}_i\,\phi'(s_i)\,x_j.
+        \]
+      </div>
+
+      <p>
+        Calculando cada factor por separado:
+      </p>
+      <div class="eq-block">
+        \[
+        \frac{\partial F}{\partial t} = \phi'(t), \qquad
+        \frac{\partial t}{\partial z_i} = w^{[2]}_i, \qquad
+        \frac{\partial z_i}{\partial s_i} = \phi'(s_i),
+        \]
+        \[
+        \frac{\partial s_i}{\partial b^{[1]}_i} = 1, \qquad
+        \frac{\partial s_i}{\partial w^{[1]}_{ij}} = x_j.
+        \]
+      </div>
+
+      <h4>7.3 Desarrollo completo de las expresiones</h4>
+      <p>
+        Por último, desarrollando completamente las expresiones se obtiene:
+      </p>
+      <div class="eq-block">
+        \[
+        \frac{\partial F}{\partial b^{[1]}_{i}} =
+        \phi'\!\left(
+          \sum_{k=1}^n w^{[2]}_k \,
+            \phi\Bigl(\sum_{j=1}^n w^{[1]}_{kj} x_j + b^{[1]}_k\Bigr)
+          + b^{[2]}
+        \right)
+        \, w^{[2]}_i \,
+        \phi'\!\left(\sum_{j=1}^n w^{[1]}_{ij} x_j + b^{[1]}_i\right),
+        \]
+        \[
+        \frac{\partial F}{\partial w^{[1]}_{ij}} =
+        \phi'\!\left(
+          \sum_{k=1}^n w^{[2]}_k \,
+            \phi\Bigl(\sum_{r=1}^n w^{[1]}_{kr} x_r + b^{[1]}_k\Bigr)
+          + b^{[2]}
+        \right)
+        \, w^{[2]}_i \,
+        \phi'\!\left(\sum_{r=1}^n w^{[1]}_{ir} x_r + b^{[1]}_i\right)\, x_j,
+        \]
+        \[
+        \frac{\partial F}{\partial b^{[2]}}
+        = \phi'\!\left(
+          \sum_{i=1}^n w^{[2]}_i \,
+            \phi\Bigl(\sum_{j=1}^n w^{[1]}_{ij} x_j + b^{[1]}_i\Bigr)
+          + b^{[2]}
+        \right),
+        \]
+        \[
+        \frac{\partial F}{\partial w^{[2]}_{i}}
+        = \phi'\!\left(
+          \sum_{k=1}^n w^{[2]}_k \,
+            \phi\Bigl(\sum_{j=1}^n w^{[1]}_{kj} x_j + b^{[1]}_k\Bigr)
+          + b^{[2]}
+        \right)
+        \, \phi\!\left(\sum_{j=1}^n w^{[1]}_{ij} x_j + b^{[1]}_i\right).
+        \]
+      </div>
+
+      <!-- PARÁMETROS Y DIAGRAMA -->
+      <h3 id="parametros-multicapa">8. Número de parámetros y diagrama de la red</h3>
+      <p>
+        En el caso del estudio de las puertas lógicas de dos entradas y una salida, se considera una red con
+        dos neuronas ocultas. La salida puede escribirse como:
+      </p>
+      <div class="eq-block">
+        \[
+          \text{output}
+          = \phi\bigl( w^{[2]}_1 \,\phi(z_1) + w^{[2]}_2 \,\phi(z_2) + b^{[2]} \bigr),
+        \]
+      </div>
+      <p>
+        donde \(z_1, z_2\) son las activaciones lineales de las dos neuronas de la capa oculta.
+      </p>
+      <p>
+        Contando parámetros:
+      </p>
+      <div class="eq-block">
+        \[
+        W^{[1]} : 2\times 2 \Rightarrow 4 \text{ parámetros}, \quad
+        b^{[1]} : 2 \text{ parámetros}, \quad
+        w^{[2]} : 2 \text{ parámetros}, \quad
+        b^{[2]} : 1 \text{ parámetro}.
+        \]
+      </div>
+      <p>
+        En total, la red tiene <strong>9 parámetros</strong>.
+      </p>
+
+      <!-- XOR CON MULTICAPA -->
+      <h3 id="xor-multicapa">9. Aproximación de XOR con un perceptrón de dos capas</h3>
+      <p>
+        Se entrena una red de dos capas (una oculta y una de salida) para aproximar la puerta XOR. La arquitectura
+        considerada tiene:
+      </p>
+      <ul>
+        <li>2 neuronas de entrada,</li>
+        <li>2 neuronas en la capa oculta,</li>
+        <li>1 neurona de salida con activación sigmoide.</li>
+      </ul>
+      <p>
+        Tras el entrenamiento mediante descenso por gradiente, se obtienen valores de salida muy cercanos a los
+        esperados:
+      </p>
+      <div class="eq-block">
+        \[
+        \begin{array}{c|c|c|c}
+        x_1 & x_2 & F(x_1,x_2) & \text{Clase} \\
+        \hline
+        0 & 0 & 0.0065 & 0 \\
+        0 & 1 & 0.9926 & 1 \\
+        1 & 0 & 0.9926 & 1 \\
+        1 & 1 & 0.0069 & 0
+        \end{array}
+        \]
+      </div>
+      <p>
+        La superficie \(F(x_1,x_2)\) en el cuadrado \([0,1]\times[0,1]\) muestra picos en \((0,1)\) y \((1,0)\) y
+        valles en \((0,0)\) y \((1,1)\), reproduciendo el comportamiento de la puerta XOR.
+      </p>
+      <p>
+        Con esto se completa el desarrollo: se ha pasado del perceptrón simple y su entrenamiento sobre problemas
+        linealmente separables (AND, OR) a un perceptrón multicapa capaz de resolver problemas no linealmente
+        separables como XOR.
+      </p>
+
+      <p style="margin-top:1rem; font-size:0.8rem; color:#555;">
+        Nota: en esta sección se ha incluido todo el desarrollo teórico del documento original (texto y fórmulas),
+        omitiendo únicamente los bloques de código Matlab.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+
+      </div>
+    </div>
+  </main>
+</body>
+</html>
