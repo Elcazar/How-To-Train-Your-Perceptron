@@ -22,8 +22,6 @@ La barra superior incluye acceso directo a:
 - PDF original  
 - Inicio  
 
-Cada página mantiene el mismo estilo visual para una experiencia coherente.
-
 ---
 
 ## 📄 Licencia
