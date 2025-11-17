@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="static/banner_percep.png" width="100%" />
-</p>
-
 
 
 # 🧠 Cómo entrenar a tu perceptrón  
