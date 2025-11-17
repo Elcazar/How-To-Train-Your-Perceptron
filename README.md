@@ -9,7 +9,7 @@ El objetivo es ofrecer una explicación clara, visual e intuitiva del funcionami
 
 ---
 
-👉 **[Ver proyecto en línea](https://TU_USUARIO.github.io/NOMBRE_DEL_REPO/)**  
+👉 **[Ver proyecto en línea]([https://TU_USUARIO.github.io/NOMBRE_DEL_REPO/](https://elcazar.github.io/How-To-Train-Your-Perceptron/index.html))**  
 ---
 
 
